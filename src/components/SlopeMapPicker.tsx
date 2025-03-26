@@ -1,15 +1,9 @@
 import React, { useState } from 'react';
-import { MapItem, MapSide } from '../types';
+import { Coordinate, MapItem, MapSide } from '../types';
 
 interface SlopeMapProps {
   mapSide: MapSide;
-  mapItems: MapItems[];
-}
-
-interface Coordinate {
-  x: number;
-  y: number;
-  slopeId?: string;
+  mapItems: MapItem[];
 }
 
 const SlopeMap: React.FC<SlopeMapProps> = ({ mapSide, mapItems }) => {
@@ -22,14 +16,14 @@ const SlopeMap: React.FC<SlopeMapProps> = ({ mapSide, mapItems }) => {
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     
     if (selectedSlope) {
-      setCoordinates([...coordinates, { x, y, slopeId: selectedSlope }]);
+      setCoordinates([...coordinates, { x, y, id: selectedSlope }]);
       setSelectedSlope('');
     }
   };
 
   const handleCopyCoordinates = () => {
     const coordsText = coordinates
-      .map(coord => `{ slopeId: "${coord.slopeId}", x: ${coord.x.toFixed(2)}, y: ${coord.y.toFixed(2)} }`)
+      .map(coord => `{ id: "${coord.id}", x: ${coord.x.toFixed(2)}, y: ${coord.y.toFixed(2)} }`)
       .join(',\n');
     navigator.clipboard.writeText(`[\n${coordsText}\n]`);
     alert('Coordinates copied to clipboard!');
@@ -49,8 +43,8 @@ const SlopeMap: React.FC<SlopeMapProps> = ({ mapSide, mapItems }) => {
         >
           <option value="">Select a slope/lift</option>
           {mapItems.map((slope) => (
-            <option key={slope.id} value={slope.id}>
-              {slope.id} - {slope.name}
+            <option key={slope.fullName} value={slope.fullName}>
+              {slope.fullName}
             </option>
           ))}
         </select>
@@ -79,8 +73,11 @@ const SlopeMap: React.FC<SlopeMapProps> = ({ mapSide, mapItems }) => {
         />
         
         {/* Display existing coordinates */}
-        {coordinates.map((coord, index) => {
-          const slope = mapItems.find(s => s.id === coord.slopeId);
+        {coordinates.map((coordinate, index) => {
+          const slope = mapItems.find(mapItem => {
+            // console.log('mapItem:', mapItem)
+            return mapItem.fullName === coordinate.id});
+          console.log(slope);
           return (
             <div
               key={index}
@@ -88,15 +85,15 @@ const SlopeMap: React.FC<SlopeMapProps> = ({ mapSide, mapItems }) => {
                 slope?.isOpen ? 'text-green-600' : 'text-red-600'
               }`}
               style={{
-                left: `${coord.x}%`,
-                top: `${coord.y}%`,
+                left: `${coordinate.x}%`,
+                top: `${coordinate.y}%`,
                 transform: 'translate(-50%, -50%)',
                 padding: '4px',
                 borderRadius: '4px',
                 backgroundColor: 'rgba(255, 255, 255, 0.8)',
               }}
             >
-              {slope?.id}
+              {slope?.prefix}
             </div>
           );
         })}
@@ -104,7 +101,7 @@ const SlopeMap: React.FC<SlopeMapProps> = ({ mapSide, mapItems }) => {
         {/* Preview for selected slope */}
         {selectedSlope && (
           <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-30 text-white text-xl pointer-events-none">
-            Click on the map to place {mapItems.find(s => s.id === selectedSlope)?.name}
+            Click on the map to place {mapItems.find(mapItem => mapItem.fullName === selectedSlope)?.fullName}
           </div>
         )}
       </div>

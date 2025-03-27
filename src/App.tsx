@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
-import { Loader } from 'lucide-react';
+import { Loader, XCircle } from 'lucide-react';
 import * as cheerio from 'cheerio';
 
-import SlopeMapPicker from './components/SlopeMapPicker';
+import SlopeMapLive from './components/SlopeMapLive';
 import {mapItemsRawSlatta, mapItemsRawVestlia, slattaCoordinates, vestliaCoordinates} from "./data.tsx";
 import {Coordinate, MapItem, MapItemLive, MapSide} from './types';
+import { slopeColourMap } from './utils/constants.ts';
 
 const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
 const SLOPE_STATUS_URL = 'https://www.skigeilo.no/webkamera-og-vaer';
@@ -30,7 +31,11 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const hasFetched = useRef(false); // Track if fetch has run
+
   useEffect(() => {
+    if (hasFetched.current) return; // Prevent second fetch
+    hasFetched.current = true;
     const fetchSlopeStatuses = async () => {
       console.log('Looking at geilo lift status page:', SLOPE_STATUS_URL)
       try {
@@ -87,7 +92,7 @@ function App() {
         //
         //   return a.prefix.localeCompare(b.prefix); // Default alphabetical sorting for letters
         // });
-        console.log(mapItemsLiveStatuses)
+
         // Convert MapItemLive array to a lookup Map (key: fullName, value: isOpen)
         const liveStatusMap = new Map(mapItemsLiveStatuses.map(item => [item.fullName, item.isOpen]));
 
@@ -100,7 +105,6 @@ function App() {
           }))
         }));
 
-// Now updatedMapSides contains the updated isOpen values
         setMapSidesLive(updatedMapSides);
         setLoading(false);
       } catch (error) {
@@ -136,14 +140,14 @@ function App() {
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Geilo Ski Resort Status</h1>
-        <a href={SLOPE_STATUS_URL}>see source here</a>
+        <a   className="text-blue-600 hover:text-blue-800 underline underline-offset-2 font-medium transition duration-200"
+             href={SLOPE_STATUS_URL}>see source here</a>
         {liveStatusUpdate()}
         {!loading && <div className="grid grid-cols-1 gap-8">
-          {/*{mapSides.map((mapSide) => (*/}
           {mapSidesLive.map((mapSide) => (
               <div key={mapSide.name}>
                 <div className="bg-white rounded-lg shadow-lg p-6 w-fit">
-                  <SlopeMapPicker
+                  <SlopeMapLive
                       mapSide={mapSide}
                       mapItems={mapSide.mapItems}
                   />
@@ -154,20 +158,17 @@ function App() {
                   {/* Lifts Section */}
                   <div className="mb-8">
                     <h3 className="text-lg font-semibold mb-3">{`${mapSide.name} Lifts`}</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                       {mapSide.mapItems
                           .filter(item => item.type === 'lift')
                           .map((lift) => (
                               <div
                                   key={lift.fullName}
-                                  className={`p-4 rounded-lg ${
+                                  className={`p-2 rounded-lg ${
                                       lift.isOpen ? 'bg-green-100 border-green-500' : 'bg-red-100 border-red-500'
                                   } border`}
                               >
                                 <div className="font-semibold">{lift.fullName}</div>
-                                <div className={`text-sm ${lift.isOpen ? 'text-green-700' : 'text-red-700'}`}>
-                                  {lift.isOpen ? 'Open' : 'Closed'}
-                                </div>
                               </div>
                           ))}
                     </div>
@@ -176,23 +177,27 @@ function App() {
                   {/* Slopes Section */}
                   <div>
                     <h3 className="text-lg font-semibold mb-3">{`${mapSide.name} Slopes`}</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                       {mapSide.mapItems
                           .filter(item => item.type === 'slope')
                           .map((slope) => (
+                              <div className="flex">
                               <div
                                   key={slope.fullName}
-                                  className={`p-4 rounded-lg ${
+                                  className={`relative p-2 flex items-center flex-grow gap-4 ${
                                       slope.isOpen ? 'bg-green-100 border-green-500' : 'bg-red-100 border-red-500'
-                                  } border`}
+                                  } border-l border-t border-b`}
                               >
                                 <div className="font-semibold">{slope.fullName}</div>
-                                <div className="text-sm text-gray-600">
-                                  {slope.difficulty && `Difficulty: ${slope.difficulty}`}
-                                </div>
-                                <div className={`text-sm ${slope.isOpen ? 'text-green-700' : 'text-red-700'}`}>
-                                  {slope.isOpen ? 'Open' : 'Closed'}
-                                </div>
+                                {!slope.isOpen && <XCircle className="text-red-700 w-5 h-5 mt-1"/>}
+                              </div>
+                      {/* Color Strip on the Right Side */}
+                        <div
+                        className="relative top-0 right-0 h-full w-[40px] rounded-r-lg"
+                        style={{
+                        backgroundColor: slope.difficulty ? slopeColourMap[slope.difficulty] : "gray",
+                      }}
+                    ></div>
                               </div>
                           ))}
                     </div>

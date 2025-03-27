@@ -1,4 +1,4 @@
-import { Coordinate} from "./types.ts";
+import { Coordinate, MapItem, MapSide } from './types.ts';
 
 export const slattaCoordinates: Coordinate[] = [
   { id: "11-Ølkorken", x: 19.50, y: 21.04 },
@@ -44,6 +44,7 @@ export const slattaCoordinates: Coordinate[] = [
   { id: "47-Havsdalsløypa", x: 87.50, y: 31.31 },
   { id: "48-Fjellcrossen", x: 83.67, y: 24.92 }
 ]
+
 export const vestliaCoordinates: Coordinate[] = [
   { id: "P-Hufseheisen", x: 2.75, y: 67.20 },
   { id: "P-Kikut skibånd", x: 6.08, y: 67.07 },
@@ -397,6 +398,7 @@ export const mapItemsRawSlatta = [
     type: 'lift',
   },
 ]
+
 export const mapItemsRawVestlia = [
   {
     prefix: '50',
@@ -591,3 +593,17 @@ export const mapItemsRawVestlia = [
   },
 ]
 
+export const mapSides: MapSide[] = [
+  {
+    name: 'Slaatta, Havsdalen, Geiloheisen + Halstensgard',
+    image: '/src/images/SlaattaHavsdalenGeiloheisen+Halstensgard.png',
+    mapItems: mapItemsRawSlatta as MapItem[],
+    coordinates: slattaCoordinates
+  },
+  {
+    name: 'Kikut + Vestlia',
+    image: '/src/images/Kitkut+Vestlia.png',
+    mapItems: mapItemsRawVestlia as MapItem[],
+    coordinates: vestliaCoordinates
+  }
+];

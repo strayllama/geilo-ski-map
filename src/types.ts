@@ -4,13 +4,19 @@ export interface MapItem {
   fullName: string;
   isOpen: boolean;
   type: 'slope' | 'lift';
-  difficulty?: 'very easy' | 'easy' | 'medium' | 'demanding';
+  difficulty?: 'green' | 'blue' | 'red' | 'black';
+}
+
+export interface MapItemLive {
+  fullName: string;
+  isOpen: boolean;
 }
 
 export interface MapSide {
   name: string;
   image: string;
   mapItems: MapItem[]
+  coordinates: Coordinate[]
 }
 
 export interface Coordinate {

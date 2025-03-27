@@ -4,8 +4,8 @@ import { Loader } from 'lucide-react';
 import * as cheerio from 'cheerio';
 
 import SlopeMapPicker from './components/SlopeMapPicker';
-import { mapItemsRawSlatta, mapItemsRawVestlia } from "./data.tsx";
-import { MapItem, MapSide } from './types';
+import {mapItemsRawSlatta, mapItemsRawVestlia, slattaCoordinates, vestliaCoordinates} from "./data.tsx";
+import {Coordinate, MapItem, MapItemLive, MapSide} from './types';
 
 const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
 const SLOPE_STATUS_URL = 'https://www.skigeilo.no/webkamera-og-vaer';
@@ -14,17 +14,19 @@ const mapSides: MapSide[] = [
   {
     name: 'Slaatta, Havsdalen, Geiloheisen + Halstensgard',
     image: '/src/images/SlaattaHavsdalenGeiloheisen+Halstensgard.png',
-    mapItems: mapItemsRawSlatta as MapItem[]
+    mapItems: mapItemsRawSlatta as MapItem[],
+    coordinates: slattaCoordinates
   },
   {
     name: 'Kikut + Vestlia',
     image: '/src/images/Kitkut+Vestlia.png',
-    mapItems: mapItemsRawVestlia as MapItem[]
+    mapItems: mapItemsRawVestlia as MapItem[],
+    coordinates: vestliaCoordinates
   }
 ];
 
 function App() {
-  const [mapItems, setMapItems] = useState<MapItem[]>([]);
+  const [mapSidesLive, setMapSidesLive] = useState<{ name: string; image: string; mapItems: MapItem[], coordinates: Coordinate[]}[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,49 +39,69 @@ function App() {
         const response = await axios.get(`${CORS_PROXY}${encodeURIComponent(SLOPE_STATUS_URL)}`);
         const $ = cheerio.load(response.data);
         
-        const itemsForMap: MapItem[] = [];
+        const mapItemsLiveStatuses: MapItemLive[] = [];
 
         // Process all list items
         $('.list-group-item').each((_, element) => {
           const slopOrLiftTexts = $(element).contents().map((_, el) => $(el).text().trim()).get().filter(text => text.length > 0); // Remove empty text nodes
           // console.log(slopOrLiftTexts); // Slope: ["11-Ølkorken", "Åpen"], Lift: ["B-Fugleleiken", "Åpen"]
 
-     
+          // if (slopOrLiftTexts.length === 2) {
+          //   const fullName = slopOrLiftTexts[0]
+          //   const prefix = slopOrLiftTexts[0].split('-')[0]
+          //   const name = slopOrLiftTexts[0].split('-')[1];
+          //   const statusText = slopOrLiftTexts[1].toLowerCase();
+          //   const isOpen = statusText === 'åpen' || statusText === 'open';
+          //
+          //   // Determine if it's a lift by checking if id is [A-Z], (the slopes have digit for id)
+          //   const isLift = /^[A-Z]$/i.test(prefix);
+          //   // const item = { prefix, name, isOpen, isLift }
+          //   // console.log(item);
+          //
+          //   itemsForMap.push({
+          //     prefix: prefix,
+          //     fullName: fullName,
+          //     isOpen: isOpen,
+          //     type: isLift ? 'lift' : 'slope',
+          //     // ...(difficulty && { difficulty })
+          //   });
+          // }
           if (slopOrLiftTexts.length === 2) {
             const fullName = slopOrLiftTexts[0]
-            const prefix = slopOrLiftTexts[0].split('-')[0]
-            const name = slopOrLiftTexts[0].split('-')[1];
             const statusText = slopOrLiftTexts[1].toLowerCase();
             const isOpen = statusText === 'åpen' || statusText === 'open';
-            
-            // Determine if it's a lift by checking if id is [A-Z], (the slopes have digit for id)
-            const isLift = /^[A-Z]$/i.test(prefix);
-            // const item = { prefix, name, isOpen, isLift }
-            // console.log(item);
 
-            itemsForMap.push({
-              prefix: prefix,
-              name: name,
+            mapItemsLiveStatuses.push({
               fullName: fullName,
               isOpen: isOpen,
-              type: isLift ? 'lift' : 'slope',
-              // ...(difficulty && { difficulty })
             });
           }
         });
-        itemsForMap.sort((a, b) => {
-          const isANumber = /^\d+$/.test(a.prefix);
-          const isBNumber = /^\d+$/.test(b.prefix);
-        
-          if (isANumber && isBNumber) {
-            return Number(a.prefix) - Number(b.prefix); // Proper numeric comparison
-          }
-          
-          return a.prefix.localeCompare(b.prefix); // Default alphabetical sorting for letters
-        });
-        console.log(itemsForMap)
+        // itemsForMap.sort((a, b) => {
+        //   const isANumber = /^\d+$/.test(a.prefix);
+        //   const isBNumber = /^\d+$/.test(b.prefix);
+        //
+        //   if (isANumber && isBNumber) {
+        //     return Number(a.prefix) - Number(b.prefix); // Proper numeric comparison
+        //   }
+        //
+        //   return a.prefix.localeCompare(b.prefix); // Default alphabetical sorting for letters
+        // });
+        console.log(mapItemsLiveStatuses)
+        // Convert MapItemLive array to a lookup Map (key: fullName, value: isOpen)
+        const liveStatusMap = new Map(mapItemsLiveStatuses.map(item => [item.fullName, item.isOpen]));
 
-        setMapItems(itemsForMap);
+        // Loop through mapSides and update mapItems with the live isOpen status
+        const updatedMapSides = mapSides.map(side => ({
+          ...side,
+          mapItems: side.mapItems.map(item => ({
+            ...item,
+            isOpen: liveStatusMap.get(item.fullName) ?? false // Default to false if not found
+          }))
+        }));
+
+// Now updatedMapSides contains the updated isOpen values
+        setMapSidesLive(updatedMapSides);
         setLoading(false);
       } catch (error) {
         setError(`Failed to fetch live status. Please try again later: ${error}`);
@@ -116,8 +138,9 @@ function App() {
         <h1 className="text-3xl font-bold mb-8">Geilo Ski Resort Status</h1>
         <a href={SLOPE_STATUS_URL}>see source here</a>
         {liveStatusUpdate()}
-        <div className="grid grid-cols-1 gap-8">
-          {mapSides.map((mapSide) => (
+        {!loading && <div className="grid grid-cols-1 gap-8">
+          {/*{mapSides.map((mapSide) => (*/}
+          {mapSidesLive.map((mapSide) => (
               <div key={mapSide.name}>
                 <div className="bg-white rounded-lg shadow-lg p-6 w-fit">
                   <SlopeMapPicker
@@ -177,7 +200,7 @@ function App() {
                 </div>
               </div>
           ))}
-        </div>
+        </div>}
       </div>
     </div>
   );

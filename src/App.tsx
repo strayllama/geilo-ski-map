@@ -102,13 +102,14 @@ function App() {
                     mapItems={mapSide.mapItems}
                 />
               </div>
-              <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
+              <div style={{"width": "1248px"}} className="mt-8 bg-white rounded-lg shadow-lg p-6">
                 <h2 className="text-xl font-bold mb-4">Status Overview</h2>
 
                 {/* Lifts Section */}
                 <div className="mb-8">
                   <h3 className="text-lg font-semibold mb-3">{`${mapSide.name} Lifts`}</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/*<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">*/}
+                  <div className="grid grid-cols-4 gap-4">
                     {mapSide.mapItems
                         .filter(item => item.type === 'lift')
                         .map((lift) => (
@@ -127,7 +128,8 @@ function App() {
                 {/* Slopes Section */}
                 <div>
                   <h3 className="text-lg font-semibold mb-3">{`${mapSide.name} Slopes`}</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/*<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">*/}
+                  <div className="grid grid-cols-4 gap-4">
                     {mapSide.mapItems
                       .filter(item => item.type === 'slope')
                       .map((slope) => (

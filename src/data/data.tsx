@@ -596,13 +596,13 @@ export const mapItemsRawVestlia = [
 export const mapSides: MapSide[] = [
   {
     name: 'Slaatta, Havsdalen, Geiloheisen + Halstensgard',
-    image: 'SlaattaHavsdalenGeiloheisen+Halstensgard.png',
+    image: '/images/SlaattaHavsdalenGeiloheisen+Halstensgard.png',
     mapItems: mapItemsRawSlatta as MapItem[],
     coordinates: slattaCoordinates
   },
   {
     name: 'Kikut + Vestlia',
-    image: 'Kitkut+Vestlia.png',
+    image: '/images/Kitkut+Vestlia.png',
     mapItems: mapItemsRawVestlia as MapItem[],
     coordinates: vestliaCoordinates
   }

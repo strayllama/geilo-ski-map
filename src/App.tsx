@@ -4,7 +4,7 @@ import { Loader, XCircle } from 'lucide-react';
 import * as cheerio from 'cheerio';
 
 import SlopeMapLive from './components/SlopeMapLive';
-import { mapSides } from './data.tsx';
+import { mapSides } from './data/data.tsx';
 import {Coordinate, MapItem, MapItemLive } from './types';
 import { slopeColourMap, CORS_PROXY, SLOPE_STATUS_URL } from './utils/constants.ts';
 
